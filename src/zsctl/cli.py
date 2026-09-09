@@ -333,7 +333,42 @@ def main():
     p_file = subparsers.add_parser("file", help="Pass-through file operations to zs (ls, find, mv, cp)")
     p_file.add_argument("zs_args", nargs=argparse.REMAINDER, help="Arguments to pass to zs")
 
+    # help subcommand
+    p_help = subparsers.add_parser("help", help="Show help for zsctl or a subcommand")
+    p_help.add_argument("topic", nargs="?", help="Subcommand topic (docker, disk, download, sys, file)")
+
+    sub_parsers_map = {
+        "docker": p_docker,
+        "disk": p_disk,
+        "download": p_dl,
+        "sys": p_sys,
+        "file": p_file,
+    }
+
+    # Intercept empty argv
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(0)
+
+    # Intercept 'zsctl <category>' with no further args
+    if len(sys.argv) == 2 and sys.argv[1] in sub_parsers_map:
+        sub_parsers_map[sys.argv[1]].print_help()
+        sys.exit(0)
+
+    # Intercept 'zsctl docker compose' with no further args
+    if len(sys.argv) == 3 and sys.argv[1] == "docker" and sys.argv[2] == "compose":
+        d_compose.print_help()
+        sys.exit(0)
+
     args = parser.parse_args()
+
+    # Handle help subcommand
+    if args.category == "help":
+        if args.topic and args.topic in sub_parsers_map:
+            sub_parsers_map[args.topic].print_help()
+        else:
+            parser.print_help()
+        return
 
     # Pass-through to zs
     if args.category == "file":
